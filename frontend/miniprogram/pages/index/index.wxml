@@ -1,0 +1,20 @@
+<!--index.wxml-->
+<view class="container">
+  <view class="welcome">
+    <text class="welcome-text">欢迎使用在线出题考试系统</text>
+  </view>
+  <view class="features">
+    <view class="feature-item">
+      <view class="feature-icon">📝</view>
+      <text class="feature-text">创建试卷</text>
+    </view>
+    <view class="feature-item">
+      <view class="feature-icon">📋</view>
+      <text class="feature-text">参加考试</text>
+    </view>
+    <view class="feature-item">
+      <view class="feature-icon">📊</view>
+      <text class="feature-text">查看成绩</text>
+    </view>
+  </view>
+</view>

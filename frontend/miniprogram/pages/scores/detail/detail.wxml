@@ -1,0 +1,32 @@
+<!--detail.wxml-->
+<view class="container">
+  <view class="score-info">
+    <view class="score-header">
+      <text class="paper-title">{{score.paperTitle}}</text>
+      <text class="score">{{score.score}}分</text>
+    </view>
+    <view class="score-meta">
+      <text class="meta-item">考试时间：{{score.examTime}}</text>
+      <text class="meta-item">总题数：{{score.totalQuestions}}</text>
+      <text class="meta-item">正确题数：{{score.correctQuestions}}</text>
+      <text class="meta-item">错误题数：{{score.incorrectQuestions}}</text>
+    </view>
+  </view>
+  <view class="answers">
+    <view class="answer-item" wx:for="{{score.answers}}" wx:key="questionId">
+      <view class="answer-header">
+        <text class="question-title">{{index + 1}}. {{item.questionContent}}</text>
+        <text class="answer-status" wx:if="item.isCorrect">正确</text>
+        <text class="answer-status wrong" wx:else>错误</text>
+      </view>
+      <view class="answer-detail">
+        <text class="label">你的答案：</text>
+        <text class="value">{{item.yourAnswer}}</text>
+      </view>
+      <view class="answer-detail" wx:if="!item.isCorrect">
+        <text class="label">正确答案：</text>
+        <text class="value">{{item.correctAnswer}}</text>
+      </view>
+    </view>
+  </view>
+</view>

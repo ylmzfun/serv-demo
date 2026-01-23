@@ -1,0 +1,13 @@
+<!--detail.wxml-->
+<view class="container">
+  <view class="exam-info">
+    <view class="exam-title">{{exam.title}}</view>
+    <view class="exam-meta">
+      <text class="meta-item">考试时间：{{exam.duration}}分钟</text>
+      <text class="meta-item">总分：{{exam.totalScore}}分</text>
+      <text class="meta-item">开始时间：{{exam.startTime}}</text>
+      <text class="meta-item">结束时间：{{exam.endTime}}</text>
+    </view>
+  </view>
+  <button class="start-btn" bindtap="onStartExam">开始考试</button>
+</view>

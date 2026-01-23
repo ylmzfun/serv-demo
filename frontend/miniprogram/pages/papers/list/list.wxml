@@ -1,0 +1,13 @@
+<!--list.wxml-->
+<view class="container">
+  <view class="paper-list">
+    <view class="paper-item" wx:for="{{papers}}" wx:key="id" bindtap="onPaperTap">
+      <view class="paper-title">{{item.title}}</view>
+      <view class="paper-info">
+        <text class="paper-time">考试时间：{{item.duration}}分钟</text>
+        <text class="paper-score">总分：{{item.totalScore}}分</text>
+      </view>
+      <view class="paper-status">{{item.status}}</view>
+    </view>
+  </view>
+</view>

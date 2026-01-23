@@ -1,0 +1,20 @@
+<!--answer.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">{{paper.title}}</text>
+    <text class="time">剩余时间：{{remainingTime}}秒</text>
+  </view>
+  <view class="questions">
+    <view class="question-item" wx:for="{{questions}}" wx:key="id">
+      <view class="question-title">{{index + 1}}. {{item.content}}</view>
+      <view class="options" wx:if="item.type === 'single' || item.type === 'multiple'">
+        <view class="option" wx:for="{{item.options}}" wx:key="value" bindtap="onOptionSelect">
+          <view class="option-radio">{{option.label}}</view>
+          <text class="option-text">{{option.text}}</text>
+        </view>
+      </view>
+      <textarea class="textarea" wx:if="item.type === 'essay'" placeholder="请输入答案" bindinput="onEssayInput"></textarea>
+    </view>
+  </view>
+  <button class="submit-btn" bindtap="onSubmit">提交答案</button>
+</view>
