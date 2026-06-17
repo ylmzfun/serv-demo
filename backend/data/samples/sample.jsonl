@@ -1,0 +1,3 @@
+{"messages": [{"role": "user", "content": "用一句话解释什么是 LoRA 微调"}, {"role": "assistant", "content": "LoRA 是一种只训练少量低秩矩阵、冻结原模型权重的高效微调方法，用很小的代价让大模型适配特定任务。"}]}
+{"messages": [{"role": "user", "content": "MLX 适合在什么设备上跑？"}, {"role": "assistant", "content": "MLX 是 Apple 为自家芯片打造的机器学习框架，专为 M 系列芯片的统一内存架构优化，适合在 Mac（如 M3 Pro）上做本地推理与微调。"}]}
+{"messages": [{"role": "user", "content": "把这句话改写得更正式：今天太累了不想干活"}, {"role": "assistant", "content": "今日略感疲惫，恐难以继续推进当前工作。"}]}

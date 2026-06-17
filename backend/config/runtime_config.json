@@ -1,0 +1,76 @@
+{
+  "model": {
+    "base_id": "mlx-community/Qwen2.5-7B-Instruct-4bit",
+    "adapter_path": "models/llm/adapters",
+    "use_adapter": false,
+    "temperature": 0.7,
+    "max_tokens": 512
+  },
+  "lora": {
+    "rank": 8,
+    "scale": 20.0,
+    "layers": 16,
+    "dropout": 0.0
+  },
+  "providers": {
+    "active": "auto",
+    "deepseek": {
+      "enabled": true,
+      "api_key": "",
+      "base_url": "https://api.deepseek.com",
+      "model": "deepseek-chat"
+    }
+  },
+  "training": {
+    "config": "standard",
+    "data_dir": "data/processed",
+    "iters": 600
+  },
+  "yolo": {
+    "base_model": "yolo11n.pt",
+    "epochs": 50,
+    "imgsz": 640,
+    "batch": 16
+  },
+  "orchestrator_prompt": "你是总控调度器。把用户需求拆解为清晰步骤，分配给规划师、执行者、审查员，最后整合各方结果，输出准确、简洁、可执行的最终答复。",
+  "agents": [
+    {
+      "key": "planner",
+      "name": "规划师",
+      "enabled": true,
+      "system_prompt": "你是规划师。把目标拆成有序、可执行的步骤，标注每步要点与风险，不要执行，只输出计划。"
+    },
+    {
+      "key": "executor",
+      "name": "执行者",
+      "enabled": true,
+      "system_prompt": "你是执行者。严格按计划逐步完成任务，给出具体结果与产物；遇到不确定处明确说明假设。"
+    },
+    {
+      "key": "reviewer",
+      "name": "审查员",
+      "enabled": true,
+      "system_prompt": "你是审查员。检查执行结果的正确性、完整性与风险，指出问题并给出修正建议。"
+    }
+  ],
+  "skills": {
+    "web_search": {
+      "enabled": false,
+      "provider": "duckduckgo",
+      "api_key": ""
+    },
+    "code": {
+      "enabled": true,
+      "timeout": 10
+    },
+    "file": {
+      "enabled": true,
+      "sandbox": "data/sandbox"
+    },
+    "shell": {
+      "enabled": false,
+      "timeout": 10
+    }
+  },
+  "mcp": []
+}

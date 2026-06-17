@@ -1,0 +1,36 @@
+[project]
+name = "mlx-agent-train-backend"
+version = "0.1.0"
+description = "MLX-Agent-Train 后端：FastAPI + WebSocket，多 Agent 调度 / LLM 微调 / YOLO 训练。"
+readme = "../README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Web 框架
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "python-multipart>=0.0.9",   # 文件上传
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+    # Apple MLX（LLM 推理 / 微调）
+    "mlx>=0.18.0",
+    "mlx-lm>=0.20.0",
+    "huggingface_hub>=0.24",
+    # YOLO 视觉训练
+    "ultralytics>=8.2",
+]
+
+[project.scripts]
+mlx-agent-train = "backend.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend"]
+
+[tool.uv.workspace]
+members = [
+    "mlx-agent-train",
+]
