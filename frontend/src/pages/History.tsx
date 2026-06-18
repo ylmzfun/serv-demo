@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
+import type { WSMessage } from "../api/client";
+import { useLogSocket } from "../api/useLogSocket";
 import { Card, Section, Button, StatusPill, SubTabs } from "../components/ui";
 
 const fmt = (ts?: number | null) =>
   ts ? new Date(ts * 1000).toLocaleString() : "—";
 
+// 历史（已固化）日志一行的格式化
 function formatLog(l: any): string {
   if (l.type === "agent_step") return `【${l.role}】${l.content ?? ""}`;
   if (l.type === "log") return l.content ?? "";
@@ -13,6 +16,25 @@ function formatLog(l: any): string {
     return `[完成] ${l.payload ? JSON.stringify(l.payload) : ""}`;
   if (l.type === "error") return `[错误] ${l.content ?? ""}`;
   return l.content ?? "";
+}
+
+// 实时 WebSocket 事件一行的格式化
+function fmtLive(msg: WSMessage): string {
+  const id = msg.task_id ? `[${msg.task_id.slice(0, 6)}] ` : "";
+  switch (msg.type) {
+    case "log":
+      return `${id}${msg.payload.text ?? ""}`;
+    case "agent_step":
+      return `${id}<${msg.payload.role}> ${String(msg.payload.content ?? "").slice(0, 200)}`;
+    case "progress":
+      return `${id}进度 ${JSON.stringify(msg.payload)}`;
+    case "done":
+      return `${id}✅ 完成`;
+    case "error":
+      return `${id}⚠️ ${msg.payload.message ?? ""}`;
+    default:
+      return `${id}${msg.type}`;
+  }
 }
 
 // 操作记录
@@ -72,47 +94,77 @@ function Operations() {
   );
 }
 
-// 任务 & 训练
-function Tasks() {
+// 日志 & 任务（实时日志 + 历史任务/训练，整合到一处）
+function TasksAndLogs() {
   const [rows, setRows] = useState<any[]>([]);
-  const [sel, setSel] = useState<any>(null);
+  const [sel, setSel] = useState<string>("live"); // "live" 或某个 task_id
+  const [detail, setDetail] = useState<any>(null);
+  const [liveLines, setLiveLines] = useState<string[]>([]);
+  const endRef = useRef<HTMLDivElement>(null);
 
   const reload = () => api.histTasks().then((r) => setRows(r.tasks));
   useEffect(() => {
     reload();
   }, []);
-  const open = async (id: string) => setSel(await api.histTask(id));
+
+  // 持续接收实时事件；任务结束/出错时刷新左侧列表，保证历史同步更新。
+  const connected = useLogSocket((msg) => {
+    setLiveLines((prev) => [...prev.slice(-1000), fmtLive(msg)]);
+    if (msg.type === "done" || msg.type === "error") reload();
+  });
+
+  useEffect(() => {
+    if (sel === "live") endRef.current?.scrollIntoView();
+  }, [liveLines, sel]);
+
+  const openLive = () => {
+    setSel("live");
+    setDetail(null);
+  };
+  const openTask = async (id: string) => {
+    setSel(id);
+    setDetail(null);
+    setDetail(await api.histTask(id));
+  };
 
   return (
     <div className="row">
       <div className="col" style={{ flex: 2 }}>
         <Card>
-          <Section title="任务 & 训练" desc="调度 / LLM 训练 / YOLO 训练记录，点击查看完整日志与调度链路。" />
+          <Section title="任务 & 训练" desc="顶部为全局实时日志；点击任意历史任务查看其完整日志与调度链路。" />
           <div className="inline" style={{ marginBottom: 8 }}>
             <Button onClick={reload}>刷新</Button>
+            <span className={`pill ${connected ? "ok" : "warn"}`}>
+              {connected ? "● 实时已连接" : "○ 未连接"}
+            </span>
           </div>
           <div className="table-wrap">
             <table className="table">
               <thead>
-                <tr><th>类型</th><th>状态</th><th>创建时间</th></tr>
+                <tr><th>类型</th><th>状态</th><th>时间</th></tr>
               </thead>
               <tbody>
-                {rows.length === 0 ? (
-                  <tr><td colSpan={3} className="hint">暂无任务</td></tr>
-                ) : (
-                  rows.map((t) => (
-                    <tr
-                      key={t.task_id}
-                      className={sel?.task?.task_id === t.task_id ? "active-row" : ""}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => open(t.task_id)}
-                    >
-                      <td>{t.kind}</td>
-                      <td><StatusPill state={t.state} /></td>
-                      <td>{fmt(t.created_at)}</td>
-                    </tr>
-                  ))
-                )}
+                <tr
+                  className={sel === "live" ? "active-row" : ""}
+                  style={{ cursor: "pointer" }}
+                  onClick={openLive}
+                >
+                  <td>🔴 实时日志</td>
+                  <td><span className="pill run">直播</span></td>
+                  <td>全部任务</td>
+                </tr>
+                {rows.map((t) => (
+                  <tr
+                    key={t.task_id}
+                    className={sel === t.task_id ? "active-row" : ""}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => openTask(t.task_id)}
+                  >
+                    <td>{t.kind}</td>
+                    <td><StatusPill state={t.state} /></td>
+                    <td>{fmt(t.created_at)}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -120,19 +172,30 @@ function Tasks() {
       </div>
       <div className="col" style={{ flex: 3 }}>
         <Card>
-          <Section title="任务详情 / 日志" />
-          {!sel ? (
-            <div className="hint">点击左侧任务查看日志。</div>
-          ) : (
+          {sel === "live" ? (
             <>
-              <div className="sec-d">
-                {sel.task?.kind} · {sel.task?.task_id} · 状态 {sel.task?.state} · 创建 {fmt(sel.task?.created_at)}
-                {sel.task?.finished_at ? ` · 结束 ${fmt(sel.task?.finished_at)}` : ""}
+              <Section title="实时日志" desc="WebSocket 实时接收所有任务的日志、进度与调度链路。" />
+              <div className="inline" style={{ marginBottom: 8 }}>
+                <Button onClick={() => setLiveLines([])}>清空</Button>
               </div>
               <div className="logbox">
-                {sel.logs.length === 0 ? "（无日志）" : sel.logs.map(formatLog).join("\n")}
+                {liveLines.length ? liveLines.join("\n") : "（等待事件…触发训练 / 调度 / 生成后这里实时显示）"}
+                <div ref={endRef} />
               </div>
             </>
+          ) : detail ? (
+            <>
+              <Section title="任务日志" />
+              <div className="sec-d">
+                {detail.task?.kind} · {detail.task?.task_id} · 状态 {detail.task?.state} · 创建 {fmt(detail.task?.created_at)}
+                {detail.task?.finished_at ? ` · 结束 ${fmt(detail.task?.finished_at)}` : ""}
+              </div>
+              <div className="logbox">
+                {detail.logs.length ? detail.logs.map(formatLog).join("\n") : "（无日志）"}
+              </div>
+            </>
+          ) : (
+            <div className="hint">加载中…</div>
           )}
         </Card>
       </div>
@@ -162,13 +225,13 @@ export function History() {
       <SubTabs
         tabs={[
           { key: "ops", label: "🧾 操作记录" },
-          { key: "tasks", label: "🗂 任务 & 训练" },
+          { key: "tasklog", label: "📋 日志 & 任务" },
           { key: "config", label: "⚙️ 配置快照" },
         ]}
         active={sub}
         onChange={setSub}
       />
-      {sub === "ops" ? <Operations /> : sub === "tasks" ? <Tasks /> : <ConfigSnapshot />}
+      {sub === "ops" ? <Operations /> : sub === "tasklog" ? <TasksAndLogs /> : <ConfigSnapshot />}
     </div>
   );
 }

@@ -65,6 +65,17 @@ class ProviderConfig(BaseModel):
     deepseek_model: Optional[str] = None
 
 
+class MediaProviderConfig(BaseModel):
+    """媒体提供方设置：cap 为 image / video，vendor 为 ark / openai / local。"""
+    cap: Literal["image", "video"]
+    active: Optional[Literal["auto", "ark", "openai", "local"]] = None
+    vendor: Optional[Literal["ark", "openai", "local"]] = None
+    enabled: Optional[bool] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model: Optional[str] = None
+
+
 # ----------------------------- YOLO -----------------------------
 class YoloTrainRequest(BaseModel):
     base_model: str = "yolo11n.pt"

@@ -11,8 +11,8 @@ import { api } from "./api/client";
 import { AgentHub } from "./pages/AgentHub";
 import { LlmHub } from "./pages/LlmHub";
 import { YoloHub } from "./pages/YoloHub";
+import { MediaHub } from "./pages/MediaHub";
 import { Files } from "./pages/Files";
-import { Logs } from "./pages/Logs";
 import { Skills } from "./pages/Skills";
 import { Mcp } from "./pages/Mcp";
 import { History } from "./pages/History";
@@ -21,11 +21,11 @@ const TABS: { key: string; label: string; el: () => JSX.Element }[] = [
   { key: "agent", label: "🤖 Agent", el: () => <AgentHub /> },
   { key: "llm", label: "🧠 模型 & 对话", el: () => <LlmHub /> },
   { key: "yolo", label: "🧩 YOLO", el: () => <YoloHub /> },
+  { key: "media", label: "🎨 媒体创作", el: () => <MediaHub /> },
   { key: "skills", label: "🛠 Skill", el: () => <Skills /> },
   { key: "mcp", label: "🔌 MCP", el: () => <Mcp /> },
   { key: "files", label: "📁 文件 & 数据", el: () => <Files /> },
-  { key: "logs", label: "📋 日志", el: () => <Logs /> },
-  { key: "history", label: "📜 历史", el: () => <History /> },
+  { key: "history", label: "📜 历史 & 日志", el: () => <History /> },
 ];
 
 export default function App() {

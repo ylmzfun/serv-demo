@@ -23,8 +23,12 @@ MODELS_DIR = ROOT / "models"
 LLM_MODELS_DIR = MODELS_DIR / "llm"
 YOLO_MODELS_DIR = MODELS_DIR / "yolo"
 LOGS_DIR = ROOT / "logs"
+MEDIA_DIR = ROOT / "media"            # 生成的图片/视频产物（静态服务于 /media）
+MEDIA_IMG_DIR = MEDIA_DIR / "images"
+MEDIA_VIDEO_DIR = MEDIA_DIR / "videos"
 
-for _d in (DATA_DIR, LLM_MODELS_DIR, YOLO_MODELS_DIR, LOGS_DIR, CONFIG_PATH.parent):
+for _d in (DATA_DIR, LLM_MODELS_DIR, YOLO_MODELS_DIR, LOGS_DIR,
+           MEDIA_IMG_DIR, MEDIA_VIDEO_DIR, CONFIG_PATH.parent):
     _d.mkdir(parents=True, exist_ok=True)
 
 # ----------------------------- 服务 -----------------------------
@@ -78,6 +82,25 @@ DEFAULT = {
     },
     "training": {"config": "standard", "data_dir": "data/processed", "iters": 600},
     "yolo": {"base_model": "yolo11n.pt", "epochs": 50, "imgsz": 640, "batch": 16},
+    # 媒体创作：AI 修图 / AI 电影（单段视频）。每个能力独立选择开源本地或厂商 API。
+    "media": {
+        "image": {
+            "active": "auto",  # auto（优先有 key 的厂商，否则 local）| ark | openai | local
+            "ark": {"enabled": True, "api_key": "",
+                    "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+                    "model": "doubao-seedream-3-0-t2i-250415"},
+            "openai": {"enabled": False, "api_key": "",
+                       "base_url": "https://api.openai.com/v1", "model": "gpt-image-1"},
+            "local": {"enabled": False, "model": "stabilityai/stable-diffusion-2-1"},
+        },
+        "video": {
+            "active": "auto",  # auto | ark | local
+            "ark": {"enabled": True, "api_key": "",
+                    "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+                    "model": "doubao-seedance-1-0-lite-t2v-250428"},
+            "local": {"enabled": False, "model": ""},
+        },
+    },
     "orchestrator_prompt": (
         "你是总控调度器。把用户需求拆解为清晰步骤，分配给规划师、执行者、审查员，"
         "最后整合各方结果，输出准确、简洁、可执行的最终答复。"

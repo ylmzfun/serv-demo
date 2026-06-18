@@ -5,3 +5,6 @@ __pycache__/
 app.db
 app.db-wal
 app.db-shm
+
+# 生成的媒体产物
+media/

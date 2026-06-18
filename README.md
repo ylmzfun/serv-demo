@@ -36,6 +36,7 @@
 | LLM 微调 | `mlx-lm`（LoRA / 全量） | Apple MLX 后端 |
 | 对话推理 | DeepSeek API / 本地 MLX | Agent 与对话**优先 DeepSeek**，未配置时回退本地 MLX |
 | 视觉训练 | `ultralytics`（YOLO） | 目标检测训练 / 推理 |
+| 媒体创作 | Seedream/Seedance(火山方舟) · OpenAI 图片 · 本地 diffusers | AI 修图 / AI 电影，开源本地或厂商 API 可选 |
 | Agent 编排 | 自研 Orchestrator（Python） | 规划 / 执行 / 审查流水线 |
 | 任务管理 | `asyncio` 后台任务 + 内存任务表 | 单机运行，无需外部队列 |
 | 数据固化 | **SQLite**（`backend/app.db`） | 配置 / 操作 / 任务&训练 / 日志全部落库，重启不丢、可查询 |
@@ -67,6 +68,10 @@ mlx-agent-train/
 │   │   ├── data_prep.py       # 数据转换：CSV/JSON/JSONL → train/valid.jsonl
 │   │   ├── trainer_llm.py     # mlx-lm LoRA 微调封装（子进程 + 日志广播）
 │   │   ├── trainer_yolo.py    # ultralytics 训练 / 推理封装
+│   │   ├── media_ark.py       # 火山方舟 Ark：Seedream 图片 / Seedance 视频
+│   │   ├── media_openai.py    # OpenAI 兼容图片接口
+│   │   ├── media_local.py     # 本地 diffusers 图片生成（可选）
+│   │   ├── media_providers.py # 媒体提供方路由 + 后台生成
 │   │   ├── skills/            # 内置 Skill（code/file/shell/search）
 │   │   └── mcp_client.py      # MCP stdio/http 客户端
 │   ├── tasks.py               # 后台任务表 + 日志广播（TaskHub）
@@ -141,7 +146,7 @@ uvicorn backend.main:app --reload --port 8000
 | 🧠 模型 & 微调 | `LlmTrain.tsx` | 切换模型 / 一键微调（LoRA） | ✅ 可用 |
 | 💬 对话 | `Chat.tsx` | 与微调模型实时对话，左右对比基础模型 vs 微调模型 | ✅ 可用 |
 | 📁 训练文件 & 数据 | `Files.tsx` | 上传 / 管理训练数据（CSV / JSON / JSONL） | ✅ 可用 |
-| 📋 日志 | `Logs.tsx` | 系统运行日志，WebSocket 实时显示训练进度 | ✅ 可用 |
+| 📋 日志 & 任务 | `History.tsx` | 「📜 历史 & 日志 → 日志 & 任务」：实时日志 + 历史任务/训练（点开看完整日志） | ✅ 可用 |
 
 ### 🧩 YOLO 模型训练
 切换模型版本、一键微调、Web 内直接做物体识别测试。
@@ -238,6 +243,25 @@ WebSocket 消息统一为：
 
 ---
 
+---
+
+## 🎨 媒体创作（AI 修图 / AI 电影）
+
+两类生成能力，每类都可在 **开源本地** 与 **厂商 API** 之间切换（前端「🎨 媒体创作 → ⚙️ 提供方」配置）：
+
+| 能力 | 输入 | 厂商 API | 本地开源 |
+|------|------|----------|----------|
+| 🖼 AI 修图 | 提示词（可选参考图） | Seedream（火山方舟 Ark）/ OpenAI 图片 | `diffusers`（可选，缺包优雅降级） |
+| 🎬 AI 电影 | 提示词（可选首帧） | Seedance（火山方舟 Ark，异步轮询） | 暂未内置，提示改用厂商 API |
+
+- `active=auto`：优先「已启用且有 Key」的厂商，否则回退本地；也可强制指定。
+- Key 可在页面填写或用环境变量（Ark→`ARK_API_KEY`，OpenAI→`OPENAI_API_KEY`）；模型 ID / Base URL 均可改，不写死。
+- 生成走后台任务 + WebSocket 实时进度，产物存 `backend/media/`，静态服务于 `/media/...`，并固化到 SQLite（kind=`image_edit` / `video_gen`）。
+
+REST：`GET/PUT /api/media/providers`、`POST /api/media/image`、`POST /api/media/video`（均 multipart）、`GET /api/media/outputs`。
+
+---
+
 ## 🗃 数据持久化（SQLite）
 
 所有运行时数据都会**固化**到 `backend/app.db`（SQLite，自动建库），重启不丢，可随时查询：
@@ -261,5 +285,5 @@ WebSocket 消息统一为：
 
 1. **📁 文件 & 数据** —— 上传你的 CSV / JSON / JSONL
 2. **🧠 模型 & 微调 → 开始微调** —— 点「准备数据」→ 选配置 → 点「开始训练」
-3. **📋 日志** —— WebSocket 实时显示进度，可随时「停止」
+3. **📜 历史 & 日志 → 日志 & 任务** —— WebSocket 实时显示进度，可随时「停止」；也可回看历史任务日志
 4. **💬 对话** —— 输入问题，左右对比基础模型 vs 微调模型

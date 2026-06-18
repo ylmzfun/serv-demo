@@ -100,7 +100,34 @@ export const api = {
     return get<any>(`/api/history/operations?${p.toString()}`);
   },
   histConfig: () => get<any>("/api/history/config"),
+
+  // Media（AI 修图 / AI 电影）
+  mediaProviders: () => get<any>("/api/media/providers"),
+  saveMediaProviders: (cfg: Record<string, any>) => put<any>("/api/media/providers", cfg),
+  mediaOutputs: (kind: "image" | "video") => get<any>(`/api/media/outputs?kind=${kind}`),
 };
+
+// 表单提交（multipart）：字段 + 可选文件。用于媒体生成（file 可空 = 文生图/文生视频）。
+export async function postForm(
+  url: string,
+  fields: Record<string, string | number>,
+  file?: File,
+) {
+  const fd = new FormData();
+  for (const [k, v] of Object.entries(fields)) fd.append(k, String(v));
+  if (file) fd.append("file", file);
+  const res = await fetch(url, { method: "POST", body: fd });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      detail = (await res.json()).detail || detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+  return res.json();
+}
 
 // 文件上传（multipart）
 export async function uploadFile(url: string, file: File, extra?: Record<string, string>) {

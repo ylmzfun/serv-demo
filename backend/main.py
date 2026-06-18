@@ -17,13 +17,14 @@ if str(ROOT) not in sys.path:
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from backend import config  # noqa: E402
 from backend import db  # noqa: E402
 from backend.tasks import hub  # noqa: E402
 from backend.core.engine import Engine  # noqa: E402
 from backend.core.trainer_yolo import YoloTrainer  # noqa: E402
-from backend.api import agents, llm, yolo, skills, mcp, files, history  # noqa: E402
+from backend.api import agents, llm, yolo, skills, mcp, files, history, media  # noqa: E402
 
 db.init()
 
@@ -92,8 +93,11 @@ async def _record_operation(request: Request, call_next):
 
 
 for r in (agents.router, llm.router, yolo.router, skills.router,
-          mcp.router, files.router, history.router):
+          mcp.router, files.router, history.router, media.router):
     app.include_router(r)
+
+# 生成的图片/视频产物静态服务于 /media。
+app.mount("/media", StaticFiles(directory=str(config.MEDIA_DIR)), name="media")
 
 
 @app.on_event("startup")
