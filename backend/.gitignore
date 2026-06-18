@@ -1,2 +1,7 @@
 api/__pycache__/
 __pycache__/
+
+# SQLite 固化数据库（运行时生成）
+app.db
+app.db-wal
+app.db-shm

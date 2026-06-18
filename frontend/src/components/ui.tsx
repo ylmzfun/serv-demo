@@ -67,3 +67,28 @@ export function StatusPill({ state }: { state: string }) {
   const [cls, label] = PILL[state] ?? PILL.idle;
   return <span className={`pill ${cls}`}>{label}</span>;
 }
+
+// 页内子导航（分段控件）：用于把两个相关页签整合到同一标签内切换。
+export function SubTabs({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: { key: string; label: string }[];
+  active: string;
+  onChange: (key: string) => void;
+}) {
+  return (
+    <div className="subtabs">
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          className={active === t.key ? "active" : ""}
+          onClick={() => onChange(t.key)}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}

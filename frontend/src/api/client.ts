@@ -88,6 +88,18 @@ export const api = {
   // Files
   listFiles: () => get<{ files: { name: string; size: number }[] }>("/api/files"),
   deleteFile: (name: string) => del<any>(`/api/files/${name}`),
+
+  // History（SQLite 固化数据查询）
+  histTasks: (kind?: string, limit = 200) =>
+    get<any>(`/api/history/tasks?limit=${limit}${kind ? `&kind=${kind}` : ""}`),
+  histTask: (id: string) => get<any>(`/api/history/tasks/${id}`),
+  histOperations: (method?: string, q?: string, limit = 200) => {
+    const p = new URLSearchParams({ limit: String(limit) });
+    if (method) p.set("method", method);
+    if (q) p.set("q", q);
+    return get<any>(`/api/history/operations?${p.toString()}`);
+  },
+  histConfig: () => get<any>("/api/history/config"),
 };
 
 // 文件上传（multipart）

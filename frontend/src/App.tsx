@@ -8,32 +8,28 @@
  */
 import { useEffect, useState } from "react";
 import { api } from "./api/client";
-import { Dispatch } from "./pages/Dispatch";
-import { Agents } from "./pages/Agents";
-import { LlmTrain } from "./pages/LlmTrain";
-import { Chat } from "./pages/Chat";
+import { AgentHub } from "./pages/AgentHub";
+import { LlmHub } from "./pages/LlmHub";
+import { YoloHub } from "./pages/YoloHub";
 import { Files } from "./pages/Files";
 import { Logs } from "./pages/Logs";
-import { YoloTrain } from "./pages/YoloTrain";
-import { YoloDetect } from "./pages/YoloDetect";
 import { Skills } from "./pages/Skills";
 import { Mcp } from "./pages/Mcp";
+import { History } from "./pages/History";
 
 const TABS: { key: string; label: string; el: () => JSX.Element }[] = [
-  { key: "dispatch", label: "🎯 Agent 调度", el: () => <Dispatch /> },
-  { key: "agents", label: "👥 Agent 管理", el: () => <Agents /> },
-  { key: "llm", label: "🧠 模型 & 微调", el: () => <LlmTrain /> },
-  { key: "chat", label: "💬 对话", el: () => <Chat /> },
-  { key: "yolo", label: "🧩 YOLO 微调", el: () => <YoloTrain /> },
-  { key: "detect", label: "🔍 物体识别", el: () => <YoloDetect /> },
+  { key: "agent", label: "🤖 Agent", el: () => <AgentHub /> },
+  { key: "llm", label: "🧠 模型 & 对话", el: () => <LlmHub /> },
+  { key: "yolo", label: "🧩 YOLO", el: () => <YoloHub /> },
   { key: "skills", label: "🛠 Skill", el: () => <Skills /> },
   { key: "mcp", label: "🔌 MCP", el: () => <Mcp /> },
   { key: "files", label: "📁 文件 & 数据", el: () => <Files /> },
   { key: "logs", label: "📋 日志", el: () => <Logs /> },
+  { key: "history", label: "📜 历史", el: () => <History /> },
 ];
 
 export default function App() {
-  const [tab, setTab] = useState("dispatch");
+  const [tab, setTab] = useState("agent");
   const [health, setHealth] = useState<any>(null);
 
   useEffect(() => {

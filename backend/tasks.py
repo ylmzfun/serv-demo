@@ -12,6 +12,8 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
+from . import db
+
 
 @dataclass
 class Task:
@@ -40,6 +42,7 @@ class TaskHub:
     def create(self, kind: str, **meta) -> Task:
         task = Task(task_id=uuid.uuid4().hex[:12], kind=kind, meta=meta)
         self._tasks[task.task_id] = task
+        _safe_db(db.upsert_task, task.task_id, kind, task.created_at, meta)
         return task
 
     def get(self, task_id: str) -> Task | None:
@@ -82,25 +85,48 @@ class TaskHub:
         t = self.get(task_id)
         if t is not None:
             t.lines.append(text)
+        _safe_db(db.add_log, task_id, "log", None, text, None)
         self.broadcast("log", task_id, text=text)
 
     def progress(self, task_id: str, **payload):
+        _safe_db(db.add_log, task_id, "progress", None, None, payload)
         self.broadcast("progress", task_id, **payload)
 
     def agent_step(self, task_id: str, role: str, content: str):
+        _safe_db(db.add_log, task_id, "agent_step", role, content, None)
         self.broadcast("agent_step", task_id, role=role, content=content)
 
     def done(self, task_id: str, **payload):
         t = self.get(task_id)
         if t is not None and t.state == "running":
             t.state = "done"
+        _safe_db(db.set_task_state, task_id, "done", payload.get("final"))
+        _safe_db(db.add_log, task_id, "done", None, None, payload)
         self.broadcast("done", task_id, **payload)
 
     def error(self, task_id: str, message: str):
         t = self.get(task_id)
         if t is not None:
             t.state = "error"
+        _safe_db(db.set_task_state, task_id, "error", None)
+        _safe_db(db.add_log, task_id, "error", None, message, None)
         self.broadcast("error", task_id, message=message)
+
+    def stopped(self, task_id: str, **payload):
+        t = self.get(task_id)
+        if t is not None:
+            t.state = "stopped"
+        _safe_db(db.set_task_state, task_id, "stopped", None)
+        _safe_db(db.add_log, task_id, "done", None, None, {"stopped": True, **payload})
+        self.broadcast("done", task_id, stopped=True, **payload)
+
+
+def _safe_db(fn, *args):
+    """落库失败绝不影响实时广播。"""
+    try:
+        fn(*args)
+    except Exception:
+        pass
 
 
 hub = TaskHub()

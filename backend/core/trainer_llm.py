@@ -115,7 +115,7 @@ class LlmTrainer:
                 code = self.proc.wait()
                 if self.task and self.task.state == "stopped":
                     self._write("[已停止]")
-                    hub.broadcast("done", tid, stopped=True)
+                    hub.stopped(tid)
                 elif code == 0:
                     self._write(f"[{datetime.now():%H:%M:%S}] 训练完成 ✅ 适配器已保存到 {cfg['model']['adapter_path']}")
                     hub.done(tid, adapter_path=cfg["model"]["adapter_path"])

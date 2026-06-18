@@ -1,7 +1,8 @@
 """统一配置：路径、端口、默认超参（唯一配置来源）。
 
-运行时可变配置（Agent 角色、Skill 开关、MCP 服务器、模型选择）保存在
-`config/runtime_config.json`，由 Web 页面维护；本模块负责读写与深合并。
+运行时可变配置（Agent 角色、Skill 开关、MCP 服务器、模型选择）固化在
+SQLite（backend/app.db 的 config_kv 表），由 Web 页面维护；本模块负责读写与深合并。
+旧的 `config/runtime_config.json` 若存在，会在首次加载时自动迁移进 DB。
 """
 from __future__ import annotations
 import copy
@@ -9,8 +10,11 @@ import json
 import threading
 from pathlib import Path
 
+from . import db
+
 # backend/config.py -> backend 目录（data / models / logs / config 均位于其下）
 ROOT = Path(__file__).resolve().parent
+# 旧版 JSON 配置位置，仅用于一次性迁移。
 CONFIG_PATH = ROOT / "config" / "runtime_config.json"
 
 # ----------------------------- 路径 -----------------------------
@@ -110,17 +114,34 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return out
 
 
+def _migrate_legacy_json() -> dict | None:
+    """旧版 runtime_config.json 一次性迁移到 DB；迁移后改名为 .migrated 备份。"""
+    if not CONFIG_PATH.exists():
+        return None
+    try:
+        data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    db.set_config(data)
+    try:
+        CONFIG_PATH.rename(CONFIG_PATH.with_suffix(".json.migrated"))
+    except Exception:
+        pass
+    return data
+
+
 def load() -> dict:
     global _cache
     with _lock:
         if _cache is not None:
             return copy.deepcopy(_cache)
-        data = {}
-        if CONFIG_PATH.exists():
-            try:
-                data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-            except Exception:
+        data = db.get_config()
+        if data is None:
+            # DB 为空：尝试从旧 JSON 迁移，否则用默认值并写入 DB。
+            data = _migrate_legacy_json()
+            if data is None:
                 data = {}
+                db.set_config(_deep_merge(DEFAULT, data))
         _cache = _deep_merge(DEFAULT, data)
         return copy.deepcopy(_cache)
 
@@ -129,9 +150,7 @@ def save(cfg: dict) -> dict:
     global _cache
     with _lock:
         _cache = _deep_merge(DEFAULT, cfg)
-        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        CONFIG_PATH.write_text(
-            json.dumps(_cache, ensure_ascii=False, indent=2), encoding="utf-8")
+        db.set_config(_cache)
         return copy.deepcopy(_cache)
 
 

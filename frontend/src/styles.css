@@ -78,6 +78,32 @@ a { color: var(--accent); }
   border-bottom: 2px solid var(--accent);
 }
 
+/* 页内子导航（分段控件） */
+.subtabs {
+  display: inline-flex; gap: 4px; margin-bottom: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 11px; padding: 4px;
+}
+.subtabs button {
+  font-size: 14px; font-weight: 540; padding: 7px 16px; border: none;
+  border-radius: 8px; color: var(--muted); background: transparent;
+  white-space: nowrap; cursor: pointer; transition: color 0.18s, background 0.18s;
+}
+.subtabs button:hover { color: var(--text); background: rgba(79, 70, 229, 0.06); }
+.subtabs button.active { color: #fff; background: var(--accent); }
+
+/* 历史查询表格 */
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th, .table td {
+  text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border);
+  white-space: nowrap; vertical-align: top;
+}
+.table th { color: var(--muted); font-weight: 600; }
+.table tbody tr:hover { background: rgba(79, 70, 229, 0.05); }
+.table tr.active-row { background: rgba(79, 70, 229, 0.1); }
+
+
 /* 卡片 */
 .card {
   background: var(--surface); border: 1px solid var(--border);

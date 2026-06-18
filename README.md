@@ -38,6 +38,7 @@
 | 视觉训练 | `ultralytics`（YOLO） | 目标检测训练 / 推理 |
 | Agent 编排 | 自研 Orchestrator（Python） | 规划 / 执行 / 审查流水线 |
 | 任务管理 | `asyncio` 后台任务 + 内存任务表 | 单机运行，无需外部队列 |
+| 数据固化 | **SQLite**（`backend/app.db`） | 配置 / 操作 / 任务&训练 / 日志全部落库，重启不丢、可查询 |
 | 数据存储 | 本地文件系统（`data/`、`models/`） | 训练数据与权重落盘 |
 
 > 运行环境：**macOS + Apple Silicon (M 系列)**，依赖 MLX 故不支持 Intel / Windows / Linux GPU。
@@ -50,7 +51,8 @@
 mlx-agent-train/
 ├── backend/
 │   ├── main.py                 # FastAPI 入口，挂载路由 & WebSocket
-│   ├── config.py               # 路径、端口、默认超参（唯一配置来源）
+│   ├── config.py               # 路径、端口、默认超参（配置读写，落 SQLite）
+│   ├── db.py                   # SQLite 持久层（配置/操作/任务&训练/日志）
 │   ├── api/
 │   │   ├── agents.py           # Agent 调度 & 管理路由
 │   │   ├── llm.py              # 模型切换 / 微调 / 对话路由
@@ -233,6 +235,25 @@ WebSocket 消息统一为：
 ```json
 { "type": "log | progress | agent_step | done | error", "task_id": "...", "payload": { } }
 ```
+
+---
+
+## 🗃 数据持久化（SQLite）
+
+所有运行时数据都会**固化**到 `backend/app.db`（SQLite，自动建库），重启不丢，可随时查询：
+
+| 表 | 内容 |
+|----|------|
+| `config_kv` | 运行时配置（整份 JSON）。**唯一来源**；旧 `config/runtime_config.json` 首次启动自动迁移并备份为 `*.json.migrated` |
+| `operations` | 所有改写类请求（POST/PUT/DELETE）：方法、路径、状态码、耗时、摘要（敏感字段如 `api_key` 自动脱敏为 `***`） |
+| `tasks` | 任务 & 训练记录：dispatch / llm_train / yolo_train 的状态、创建/结束时间、最终结果 |
+| `logs` | 每个任务的全部日志与调度链路（log / progress / agent_step / done / error） |
+
+查询方式：
+
+- **Web**：`📜 历史` 页 —— 操作记录（可筛选）、任务&训练（点开看完整日志）、配置快照。
+- **REST**：`GET /api/history/operations`、`/api/history/tasks`、`/api/history/tasks/{id}`、`/api/history/config`。
+- **直接查库**：`sqlite3 backend/app.db "SELECT * FROM operations ORDER BY id DESC LIMIT 20;"`
 
 ---
 
